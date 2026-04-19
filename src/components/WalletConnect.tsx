@@ -1,7 +1,9 @@
 'use client'
 
+import { Loader2, Wallet, AlertTriangle, Zap } from 'lucide-react'
 import { useMiniPay } from '@/hooks/useMiniPay'
 import { CHAIN_IDS } from '@/lib/contracts'
+import { cn } from '@/lib/utils'
 
 export function WalletConnect() {
   const {
@@ -10,7 +12,6 @@ export function WalletConnect() {
     isConnecting,
     isMiniPayEnv,
     isWrongChain,
-    chainId,
     targetChainId,
     cusdBalance,
     connect,
@@ -22,24 +23,23 @@ export function WalletConnect() {
 
   return (
     <div className="flex items-center justify-between px-4 py-3 bg-zinc-900 border-b border-zinc-800">
-      {/* Brand */}
       <div className="flex items-center gap-2">
-        <div className="w-7 h-7 rounded-full bg-[#FCFF52] flex items-center justify-center text-black text-xs font-black">
-          AI
+        <div className="w-7 h-7 rounded-lg bg-[#FCFF52] flex items-center justify-center">
+          <Zap className="w-4 h-4 text-black" strokeWidth={2.5} />
         </div>
         <span className="text-sm font-semibold text-white">MiniPay AI</span>
-        <span className="text-[10px] px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-400">
+        <span className="text-[10px] px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-400 font-mono">
           {networkName}
         </span>
       </div>
 
-      {/* Wallet state */}
       <div className="flex items-center gap-2">
         {isWrongChain ? (
           <button
             onClick={switchToTarget}
-            className="text-xs px-3 py-1.5 rounded-lg bg-orange-500/20 text-orange-400 border border-orange-500/30 active:opacity-70"
+            className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-orange-500/10 text-orange-400 border border-orange-500/30 active:opacity-70"
           >
+            <AlertTriangle className="w-3 h-3" />
             Switch to {networkName}
           </button>
         ) : isConnected && address ? (
@@ -59,14 +59,15 @@ export function WalletConnect() {
           </button>
         ) : isConnecting ? (
           <div className="text-xs text-zinc-500 flex items-center gap-1.5">
-            <div className="w-3 h-3 border border-zinc-500 border-t-white rounded-full animate-spin" />
-            Connecting…
+            <Loader2 className="w-3 h-3 animate-spin" />
+            Connecting
           </div>
         ) : (
           <button
             onClick={connect}
-            className="text-xs px-3 py-1.5 rounded-lg bg-[#FCFF52] text-black font-semibold active:opacity-80"
+            className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-[#FCFF52] text-black font-semibold active:opacity-80"
           >
+            <Wallet className="w-3 h-3" />
             {isMiniPayEnv ? 'Connect MiniPay' : 'Connect Wallet'}
           </button>
         )}

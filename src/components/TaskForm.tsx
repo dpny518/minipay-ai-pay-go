@@ -1,13 +1,13 @@
 'use client'
 
 import { useState } from 'react'
-import clsx from 'clsx'
+import { Search, Globe, Bot, User, Smartphone, Mail, Loader2 } from 'lucide-react'
+import { cn } from '@/lib/utils'
 import {
   type TaskType,
   TASK_LABELS,
   TASK_DESCRIPTIONS,
   TASK_PLACEHOLDERS,
-  TASK_ICONS,
   TASK_PRICE_DISPLAY,
 } from '@/lib/contracts'
 import { type TaskPhase } from '@/hooks/useTaskEscrow'
@@ -21,13 +21,22 @@ const TASK_TYPES: TaskType[] = [
   'EMAIL_VERIFY',
 ]
 
+const TASK_ICON_COMPONENTS: Record<TaskType, React.ElementType> = {
+  WEB_SEARCH:    Search,
+  WEB_SCRAPE:    Globe,
+  AI_ANSWER:     Bot,
+  PEOPLE_LOOKUP: User,
+  SOCIAL_MEDIA:  Smartphone,
+  EMAIL_VERIFY:  Mail,
+}
+
 const PHASE_MESSAGES: Partial<Record<TaskPhase, string>> = {
-  checking_allowance: 'Checking cUSD balance…',
-  approving:          'Approve cUSD spend in your wallet…',
-  awaiting_approval:  'Waiting for approval…',
-  depositing:         'Confirm task deposit in your wallet…',
-  awaiting_deposit:   'Waiting for deposit…',
-  processing:         'Processing your task…',
+  checking_allowance: 'Checking cUSD balance',
+  approving:          'Approve cUSD spend in your wallet',
+  awaiting_approval:  'Waiting for approval',
+  depositing:         'Confirm task deposit in your wallet',
+  awaiting_deposit:   'Waiting for deposit',
+  processing:         'Processing your task',
 }
 
 interface TaskFormProps {
@@ -59,47 +68,46 @@ export function TaskForm({ isConnected, phase, onSubmit, onReset }: TaskFormProp
 
   return (
     <div className="px-4 py-4 space-y-4">
-      {/* Task type selector */}
       <div>
-        <p className="text-xs text-zinc-500 mb-2 uppercase tracking-wider font-medium">
+        <p className="text-[11px] text-zinc-500 mb-2 uppercase tracking-wider font-medium">
           Choose a tool
         </p>
-        <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide -mx-1 px-1">
-          {TASK_TYPES.map((type) => (
-            <button
-              key={type}
-              onClick={() => setSelectedType(type)}
-              disabled={isProcessing}
-              className={clsx(
-                'flex-shrink-0 flex flex-col items-center gap-1 px-3 py-2.5 rounded-xl border transition-all',
-                'min-w-[72px] text-center',
-                selectedType === type
-                  ? 'bg-[#FCFF52]/10 border-[#FCFF52] text-[#FCFF52]'
-                  : 'bg-zinc-900 border-zinc-800 text-zinc-400 active:bg-zinc-800',
-                isProcessing && 'opacity-50 cursor-not-allowed'
-              )}
-            >
-              <span className="text-lg">{TASK_ICONS[type]}</span>
-              <span className="text-[10px] font-medium leading-tight">
-                {TASK_LABELS[type]}
-              </span>
-              <span className="text-[9px] text-zinc-500">
-                {TASK_PRICE_DISPLAY[type]}
-              </span>
-            </button>
-          ))}
+        <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1" style={{ scrollbarWidth: 'none' }}>
+          {TASK_TYPES.map((type) => {
+            const Icon = TASK_ICON_COMPONENTS[type]
+            return (
+              <button
+                key={type}
+                onClick={() => setSelectedType(type)}
+                disabled={isProcessing}
+                className={cn(
+                  'flex-shrink-0 flex flex-col items-center gap-1.5 px-3 py-2.5 rounded-xl border transition-all min-w-[72px]',
+                  selectedType === type
+                    ? 'bg-[#FCFF52]/10 border-[#FCFF52] text-[#FCFF52]'
+                    : 'bg-zinc-900 border-zinc-800 text-zinc-400 active:bg-zinc-800',
+                  isProcessing && 'opacity-50 cursor-not-allowed'
+                )}
+              >
+                <Icon className="w-4 h-4" strokeWidth={1.75} />
+                <span className="text-[10px] font-medium leading-tight text-center">
+                  {TASK_LABELS[type]}
+                </span>
+                <span className="text-[9px] text-zinc-500">
+                  {TASK_PRICE_DISPLAY[type]}
+                </span>
+              </button>
+            )
+          })}
         </div>
       </div>
 
-      {/* Selected task info */}
       <div className="flex items-center justify-between">
         <p className="text-xs text-zinc-400">{TASK_DESCRIPTIONS[selectedType]}</p>
-        <span className="text-xs font-semibold text-[#35D07F]">
+        <span className="text-xs font-semibold text-[#35D07F] ml-2 flex-shrink-0">
           {TASK_PRICE_DISPLAY[selectedType]} cUSD
         </span>
       </div>
 
-      {/* Input form */}
       <form onSubmit={handleSubmit} className="space-y-3">
         <textarea
           value={input}
@@ -107,7 +115,7 @@ export function TaskForm({ isConnected, phase, onSubmit, onReset }: TaskFormProp
           placeholder={TASK_PLACEHOLDERS[selectedType]}
           disabled={isProcessing}
           rows={3}
-          className={clsx(
+          className={cn(
             'w-full rounded-xl px-4 py-3 text-sm',
             'bg-zinc-900 border border-zinc-800 text-white',
             'placeholder:text-zinc-600',
@@ -117,12 +125,11 @@ export function TaskForm({ isConnected, phase, onSubmit, onReset }: TaskFormProp
           )}
         />
 
-        {/* Status / submit */}
         {isProcessing ? (
           <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-zinc-900 border border-zinc-800">
-            <div className="w-4 h-4 border-2 border-zinc-700 border-t-[#FCFF52] rounded-full animate-spin flex-shrink-0" />
+            <Loader2 className="w-4 h-4 text-[#FCFF52] animate-spin flex-shrink-0" />
             <span className="text-sm text-zinc-400">
-              {PHASE_MESSAGES[phase] || 'Processing…'}
+              {PHASE_MESSAGES[phase] || 'Processing'}
             </span>
           </div>
         ) : (isComplete || isFailed) ? (
@@ -137,7 +144,7 @@ export function TaskForm({ isConnected, phase, onSubmit, onReset }: TaskFormProp
           <button
             type="submit"
             disabled={!isConnected || !input.trim()}
-            className={clsx(
+            className={cn(
               'w-full py-3.5 rounded-xl font-semibold text-sm transition-all',
               isConnected && input.trim()
                 ? 'bg-[#FCFF52] text-black active:opacity-80'
