@@ -1,7 +1,7 @@
 'use client'
 
 import { useChainId } from 'wagmi'
-import { Zap, Search, Globe, Bot, User, AlertCircle } from 'lucide-react'
+import { Zap, Search, Globe, Bot, User, AlertCircle, ExternalLink } from 'lucide-react'
 import { WalletConnect } from '@/components/WalletConnect'
 import { TaskForm } from '@/components/TaskForm'
 import { TaskResultCard } from '@/components/TaskResult'
@@ -10,23 +10,30 @@ import { useMiniPay } from '@/hooks/useMiniPay'
 import { useTaskEscrow } from '@/hooks/useTaskEscrow'
 
 const FEATURE_PILLS = [
-  { icon: Search,  label: 'Web Search' },
-  { icon: Globe,   label: 'Scrape' },
-  { icon: Bot,     label: 'AI Q&A' },
-  { icon: User,    label: 'Enrich' },
+  { icon: Search, label: 'Web Search' },
+  { icon: Globe,  label: 'Scrape' },
+  { icon: Bot,    label: 'AI Q&A' },
+  { icon: User,   label: 'Enrich' },
 ]
 
+const ADD_CASH_URL = 'https://link.minipay.xyz/add_cash?tokens=USDM'
+
 export default function Home() {
-  const { address, isConnected } = useMiniPay()
+  const { address, isConnected, isMiniPayEnv, cusdBalance } = useMiniPay()
   const chainId = useChainId()
 
   const { phase, result, error, txHash, submitTask, reset } = useTaskEscrow(address)
+
+  // Low balance: less than $0.10 cUSD
+  const isLowBalance = isConnected && cusdBalance &&
+    parseFloat(cusdBalance.formatted) < 0.10
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] max-w-md mx-auto flex flex-col">
       <WalletConnect />
 
-      {!isConnected && phase === 'idle' && (
+      {/* Not in MiniPay — show info screen */}
+      {!isMiniPayEnv && !isConnected && (
         <div className="px-6 py-10 text-center space-y-4">
           <div className="w-14 h-14 rounded-2xl bg-[#FCFF52]/10 border border-[#FCFF52]/20 flex items-center justify-center mx-auto">
             <Zap className="w-7 h-7 text-[#FCFF52]" strokeWidth={1.75} />
@@ -39,10 +46,10 @@ export default function Home() {
             <p className="text-sm text-zinc-400 leading-relaxed">
               Access powerful AI and data tools for{' '}
               <span className="text-white font-medium">micro-cents in cUSD</span>{' '}
-              via MiniPay. No subscriptions. Pay only for real results.
+              via MiniPay. No subscriptions.
             </p>
           </div>
-          <div className="flex justify-center gap-3 pt-1">
+          <div className="flex flex-wrap justify-center gap-2 pt-1">
             {FEATURE_PILLS.map(({ icon: Icon, label }) => (
               <div key={label} className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-zinc-900 border border-zinc-800">
                 <Icon className="w-3 h-3 text-zinc-500" strokeWidth={1.75} />
@@ -50,13 +57,30 @@ export default function Home() {
               </div>
             ))}
           </div>
-          <p className="text-xs text-zinc-600 pt-2">
-            Requires{' '}
-            <a href="https://www.opera.com/products/minipay" target="_blank" rel="noopener noreferrer" className="text-zinc-500 underline">
-              MiniPay
-            </a>{' '}
-            wallet on Celo
-          </p>
+          <a
+            href="https://link.minipay.xyz/discover"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 mt-2 px-4 py-2.5 rounded-xl bg-[#FCFF52] text-black text-sm font-semibold"
+          >
+            Open in MiniPay
+            <ExternalLink className="w-3.5 h-3.5" />
+          </a>
+        </div>
+      )}
+
+      {/* Low balance warning with Add Cash deeplink */}
+      {isLowBalance && phase === 'idle' && (
+        <div className="mx-4 mt-3 p-3 rounded-xl bg-orange-500/10 border border-orange-500/30 flex items-center justify-between">
+          <p className="text-xs text-orange-400">Low balance — add cUSD to continue</p>
+          <a
+            href={ADD_CASH_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs px-2.5 py-1 rounded-lg bg-orange-500/20 text-orange-300 font-medium flex-shrink-0 ml-2"
+          >
+            Add Cash
+          </a>
         </div>
       )}
 
@@ -85,12 +109,7 @@ export default function Home() {
       )}
 
       {result && phase === 'complete' && (
-        <TaskResultCard
-          result={result}
-          txHash={txHash}
-          chainId={chainId}
-          phase={phase}
-        />
+        <TaskResultCard result={result} txHash={txHash} chainId={chainId} phase={phase} />
       )}
 
       <div className="flex-1" />

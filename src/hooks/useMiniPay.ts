@@ -1,47 +1,45 @@
 'use client'
 
-import { useEffect } from 'react'
-import {
-  useAccount,
-  useConnect,
-  useDisconnect,
-  useChainId,
-  useSwitchChain,
-  useBalance,
-} from 'wagmi'
-import { injected } from 'wagmi/connectors'
+import { useEffect, useState } from 'react'
+import { useConnect, useConnectors, useAccount, useChainId, useSwitchChain, useBalance } from 'wagmi'
 import { CHAIN_IDS, CUSD_ADDRESSES } from '@/lib/contracts'
 
 const TARGET_CHAIN = (
-  Number(process.env.NEXT_PUBLIC_CHAIN_ID || CHAIN_IDS.TESTNET)
+  Number(process.env.NEXT_PUBLIC_CHAIN_ID || CHAIN_IDS.MAINNET)
 ) as 42220 | 44787
 
 export function useMiniPay() {
+  const connectors = useConnectors()
+  const { connect, error: connectError } = useConnect()
   const { address, isConnected, status } = useAccount()
-  const { connect, isPending: isConnecting } = useConnect()
-  const { disconnect } = useDisconnect()
   const chainId = useChainId()
   const { switchChain } = useSwitchChain()
+  const [hasAttempted, setHasAttempted] = useState(false)
 
-  // Detect MiniPay environment
   const isMiniPayEnv =
     typeof window !== 'undefined' && !!(window as any).ethereum?.isMiniPay
 
-  // Auto-connect inside MiniPay
+  // Always auto-connect on mount — never show a connect button per MiniPay docs
   useEffect(() => {
-    if (isMiniPayEnv && !isConnected && status === 'disconnected') {
-      connect({ connector: injected() })
+    if (hasAttempted || connectors.length === 0 || isConnected) return
+    const attemptConnect = async () => {
+      try {
+        await connect({ connector: connectors[0] })
+      } catch (err) {
+        console.error('[MiniPay] auto-connect failed:', err)
+      }
+      setHasAttempted(true)
     }
-  }, [isMiniPayEnv, isConnected, status, connect])
+    attemptConnect()
+  }, [connectors, connect, hasAttempted, isConnected])
 
-  // Auto switch to correct chain if needed
+  // Auto switch to correct chain
   useEffect(() => {
     if (isConnected && chainId !== TARGET_CHAIN) {
       switchChain({ chainId: TARGET_CHAIN })
     }
   }, [isConnected, chainId, switchChain])
 
-  // cUSD balance
   const cusdAddress = CUSD_ADDRESSES[chainId] || CUSD_ADDRESSES[TARGET_CHAIN]
   const { data: cusdBalance, refetch: refetchBalance } = useBalance({
     address,
@@ -49,6 +47,7 @@ export function useMiniPay() {
   })
 
   const isWrongChain = isConnected && chainId !== TARGET_CHAIN
+  const isConnecting = status === 'connecting' || status === 'reconnecting'
 
   return {
     address,
@@ -60,9 +59,8 @@ export function useMiniPay() {
     targetChainId: TARGET_CHAIN,
     cusdBalance,
     cusdAddress,
+    connectError,
     refetchBalance,
-    connect: () => connect({ connector: injected() }),
-    disconnect,
     switchToTarget: () => switchChain({ chainId: TARGET_CHAIN }),
   }
 }
