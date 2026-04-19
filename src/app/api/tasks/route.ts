@@ -18,6 +18,7 @@ import { createPublicClient, createWalletClient, http, type Hex } from 'viem'
 import { celo, celoAlfajores } from 'viem/chains'
 import { privateKeyToAccount } from 'viem/accounts'
 import { routeTask } from '@/lib/agentcash'
+import { checkAndTopUp } from '@/lib/topup'
 import { TASK_ESCROW_ABI, TASK_PRICES_CUSD, ESCROW_ADDRESSES, type TaskType } from '@/lib/contracts'
 
 const OPERATOR_KEY     = process.env.OPERATOR_PRIVATE_KEY as Hex
@@ -167,6 +168,11 @@ export async function POST(req: NextRequest) {
 
   // ── Call AgentCash API ────────────────────────────────────────────────────
   try {
+    // Auto top-up if AgentCash balance is low (non-blocking on failure)
+    await checkAndTopUp(OPERATOR_KEY).catch((e) =>
+      console.warn('[tasks] topup skipped:', e?.message)
+    )
+
     const result = await routeTask(taskType, input)
 
     // Task succeeded — release escrow to treasury
