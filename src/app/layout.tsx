@@ -7,6 +7,7 @@ export const metadata: Metadata = {
   description:
     'Pay micro-cents in cUSD to access AI and data tools on-demand. No subscriptions.',
   icons: { icon: '/favicon.ico' },
+  other: { 'talentapp:project_verification': '51a6071920650e1757f666090bf1590f6a9b579f455a5faa747d4959e91194da239d808935618cb2eb36da8d06ee036dc5b76bacadff7243e9915c2d90860f7c' },
 }
 
 export const viewport: Viewport = {
