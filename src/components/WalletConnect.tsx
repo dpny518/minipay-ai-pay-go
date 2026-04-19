@@ -62,14 +62,24 @@ export function WalletConnect() {
             <Loader2 className="w-3 h-3 animate-spin" />
             Connecting
           </div>
-        ) : (
+        ) : isMiniPayEnv ? (
           <button
             onClick={connect}
             className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-[#FCFF52] text-black font-semibold active:opacity-80"
           >
             <Wallet className="w-3 h-3" />
-            {isMiniPayEnv ? 'Connect MiniPay' : 'Connect Wallet'}
+            Connect MiniPay
           </button>
+        ) : (
+          <a
+            href="https://www.opera.com/products/minipay"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-zinc-800 text-zinc-300 border border-zinc-700 active:opacity-80"
+          >
+            <Wallet className="w-3 h-3" />
+            Open in MiniPay
+          </a>
         )}
       </div>
     </div>

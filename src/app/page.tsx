@@ -38,8 +38,8 @@ export default function Home() {
             </h1>
             <p className="text-sm text-zinc-400 leading-relaxed">
               Access powerful AI and data tools for{' '}
-              <span className="text-white font-medium">micro-cents in cUSD</span>.
-              No subscriptions. Pay only for real results.
+              <span className="text-white font-medium">micro-cents in cUSD</span>{' '}
+              via MiniPay. No subscriptions. Pay only for real results.
             </p>
           </div>
           <div className="flex justify-center gap-3 pt-1">
@@ -50,6 +50,13 @@ export default function Home() {
               </div>
             ))}
           </div>
+          <p className="text-xs text-zinc-600 pt-2">
+            Requires{' '}
+            <a href="https://www.opera.com/products/minipay" target="_blank" rel="noopener noreferrer" className="text-zinc-500 underline">
+              MiniPay
+            </a>{' '}
+            wallet on Celo
+          </p>
         </div>
       )}
 
