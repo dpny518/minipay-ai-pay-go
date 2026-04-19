@@ -1,0 +1,59 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --celo-yellow: #FCFF52;
+  --celo-green:  #35D07F;
+  --celo-dark:   #1E002B;
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  background-color: #0a0a0a;
+  color: #ffffff;
+  font-family: 'Inter', system-ui, sans-serif;
+  /* Prevent zoom on input focus in MiniPay */
+  touch-action: manipulation;
+}
+
+/* Prevent double-tap zoom */
+button, a {
+  touch-action: manipulation;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #333;
+  border-radius: 2px;
+}
+
+/* Markdown content */
+.prose-result h1, .prose-result h2, .prose-result h3 {
+  color: #FCFF52;
+  font-weight: 600;
+  margin: 0.75rem 0 0.25rem;
+}
+.prose-result p {
+  margin: 0.5rem 0;
+  line-height: 1.6;
+}
+.prose-result a {
+  color: #35D07F;
+  text-decoration: underline;
+}
+.prose-result code {
+  background: #1a1a1a;
+  padding: 0.1rem 0.3rem;
+  border-radius: 3px;
+  font-size: 0.85em;
+}
