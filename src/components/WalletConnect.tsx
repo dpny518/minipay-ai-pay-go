@@ -1,6 +1,6 @@
 'use client'
 
-import { Loader2, AlertTriangle, Zap, ExternalLink } from 'lucide-react'
+import { Loader2, AlertTriangle, Zap } from 'lucide-react'
 import { useMiniPay } from '@/hooks/useMiniPay'
 import { CHAIN_IDS } from '@/lib/contracts'
 
@@ -69,10 +69,14 @@ export function WalletConnect() {
             href="https://link.minipay.xyz/discover"
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-zinc-800 text-zinc-400 border border-zinc-700"
+            className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg font-semibold text-white"
+            style={{ backgroundColor: '#07955F' }}
           >
+            {/* MiniPay airplane icon */}
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M21 3L3 10.5l6.75 2.25L12 21l2.25-6.75L21 3z"/>
+            </svg>
             Open in MiniPay
-            <ExternalLink className="w-3 h-3" />
           </a>
         ) : (
           <div className="text-xs text-zinc-500 flex items-center gap-1.5">

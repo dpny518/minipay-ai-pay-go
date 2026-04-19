@@ -1,7 +1,7 @@
 'use client'
 
 import { useChainId } from 'wagmi'
-import { Zap, Search, Globe, Bot, User, AlertCircle, ExternalLink } from 'lucide-react'
+import { Zap, Search, Globe, Bot, User, AlertCircle } from 'lucide-react'
 import { WalletConnect } from '@/components/WalletConnect'
 import { TaskForm } from '@/components/TaskForm'
 import { TaskResultCard } from '@/components/TaskResult'
@@ -61,10 +61,14 @@ export default function Home() {
             href="https://link.minipay.xyz/discover"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 mt-2 px-4 py-2.5 rounded-xl bg-[#FCFF52] text-black text-sm font-semibold"
+            className="inline-flex items-center gap-2 mt-2 px-5 py-3 rounded-xl text-white text-sm font-semibold"
+            style={{ backgroundColor: '#07955F' }}
           >
+            {/* MiniPay airplane icon */}
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M21 3L3 10.5l6.75 2.25L12 21l2.25-6.75L21 3z"/>
+            </svg>
             Open in MiniPay
-            <ExternalLink className="w-3.5 h-3.5" />
           </a>
         </div>
       )}
@@ -77,7 +81,8 @@ export default function Home() {
             href={ADD_CASH_URL}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-xs px-2.5 py-1 rounded-lg bg-orange-500/20 text-orange-300 font-medium flex-shrink-0 ml-2"
+            className="text-xs px-2.5 py-1 rounded-lg text-white font-medium flex-shrink-0 ml-2"
+            style={{ backgroundColor: '#07955F' }}
           >
             Add Cash
           </a>
