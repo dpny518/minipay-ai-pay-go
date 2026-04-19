@@ -21,17 +21,29 @@ const THRESHOLD = parseFloat(process.env.AGENTCASH_TOPUP_THRESHOLD || '2')   // 
 const TOPUP_AMT = parseFloat(process.env.AGENTCASH_TOPUP_AMOUNT    || '10')  // USD worth of cUSD
 
 export async function checkAndTopUp(operatorKey: Hex): Promise<void> {
-  // 1. Check AgentCash balance via their internal API
-  const balRes = await fetch('https://agentcash.dev/api/balance', {
-    method: 'POST',
-    headers: { accept: 'application/json' },
-    body: JSON.stringify({ network: 'base', address: privateKeyToAccount(operatorKey).address }),
-  })
-  let balance = THRESHOLD + 1 // assume ok if check fails
-  if (balRes.ok) {
-    const balJson = await balRes.json() as { balance?: number }
-    balance = balJson.balance ?? balance
-  }
+  // 1. Check AgentCash balance across all networks (base, tempo, solana)
+  const address = privateKeyToAccount(operatorKey).address
+  const networks = [
+    { network: 'base',   body: { network: 'base',   address } },
+    { network: 'tempo',  body: { network: 'tempo',  address } },
+    { network: 'solana', body: { network: 'solana', address: process.env.AGENTCASH_SOLANA_ADDRESS || address } },
+  ]
+  let balance = 0
+  await Promise.all(networks.map(async ({ network, body }) => {
+    try {
+      const res = await fetch('https://agentcash.dev/api/balance', {
+        method: 'POST',
+        headers: { accept: 'application/json', 'content-type': 'application/json' },
+        body: JSON.stringify(body),
+      })
+      if (res.ok) {
+        const json = await res.json() as { balance?: number }
+        balance += json.balance ?? 0
+      }
+    } catch { /* ignore per-network failures */ }
+  }))
+
+  if (balance === 0) balance = THRESHOLD + 1 // if all checks failed, assume ok
 
   if (balance >= THRESHOLD) return
 
