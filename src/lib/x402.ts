@@ -42,15 +42,8 @@ interface PaymentRequirements {
 
 function randomNonce(): Hex {
   const bytes = new Uint8Array(32)
-  if (typeof crypto !== 'undefined') {
-    crypto.getRandomValues(bytes)
-  } else {
-    // Node.js fallback
-    const { randomBytes } = require('crypto')
-    const rb = randomBytes(32)
-    rb.copy(Buffer.from(bytes.buffer))
-  }
-  return ('0x' + Buffer.from(bytes).toString('hex')) as Hex
+  globalThis.crypto.getRandomValues(bytes)
+  return ('0x' + Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('')) as Hex
 }
 
 /**
@@ -107,7 +100,7 @@ async function signX402Payment(
     },
   }
 
-  return Buffer.from(JSON.stringify(payload)).toString('base64')
+  return btoa(JSON.stringify(payload))
 }
 
 /**
@@ -206,7 +199,7 @@ export async function buildSiwxAuth(
   // Random 8-char nonce
   const nonceBytes = new Uint8Array(4)
   crypto.getRandomValues(nonceBytes)
-  const nonce = Buffer.from(nonceBytes).toString('hex')
+  const nonce = Array.from(nonceBytes).map(b => b.toString(16).padStart(2, '0')).join('')
 
   const issuedAt = new Date().toISOString()
   const resolvedUri = uri || `https://${domain}`
@@ -223,9 +216,7 @@ export async function buildSiwxAuth(
   const signature = await walletClient.signMessage({ message })
 
   // Encode as Bearer token — format accepted by stablesocial.dev SIWX endpoints
-  const token = Buffer.from(
-    JSON.stringify({ message, signature })
-  ).toString('base64')
+  const token = btoa(JSON.stringify({ message, signature }))
 
   return `Bearer ${token}`
 }
