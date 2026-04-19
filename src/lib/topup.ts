@@ -21,16 +21,16 @@ const THRESHOLD = parseFloat(process.env.AGENTCASH_TOPUP_THRESHOLD || '2')   // 
 const TOPUP_AMT = parseFloat(process.env.AGENTCASH_TOPUP_AMOUNT    || '10')  // USD worth of cUSD
 
 export async function checkAndTopUp(operatorKey: Hex): Promise<void> {
-  // 1. Check AgentCash balance
+  // 1. Check AgentCash balance via their internal API
   const balRes = await fetch('https://agentcash.dev/api/balance', {
-    headers: { 'x-wallet-address': privateKeyToAccount(operatorKey).address },
+    method: 'POST',
+    headers: { accept: 'application/json' },
+    body: JSON.stringify({ network: 'base', address: privateKeyToAccount(operatorKey).address }),
   })
-  // AgentCash balance endpoint may not exist — fall back to CLI-style check
-  // Use the public balance endpoint pattern
-  let balance = THRESHOLD + 1 // assume ok if we can't check
+  let balance = THRESHOLD + 1 // assume ok if check fails
   if (balRes.ok) {
-    const balJson = await balRes.json() as { data?: { balance?: number } }
-    balance = balJson.data?.balance ?? balance
+    const balJson = await balRes.json() as { balance?: number }
+    balance = balJson.balance ?? balance
   }
 
   if (balance >= THRESHOLD) return
