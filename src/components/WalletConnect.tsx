@@ -15,6 +15,7 @@ export function WalletConnect() {
     cusdBalance,
     connectError,
     switchToTarget,
+    handleOpenMiniPay,
   } = useMiniPay()
 
   const networkName = targetChainId === CHAIN_IDS.MAINNET ? 'Celo' : 'Alfajores'
@@ -60,15 +61,16 @@ export function WalletConnect() {
             Connecting
           </div>
         ) : connectError ? (
-          <div className="text-xs text-red-400 flex items-center gap-1.5">
+          <button
+            onClick={handleOpenMiniPay}
+            className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-red-500/10 text-red-400 border border-red-500/30 active:opacity-70"
+          >
             <AlertTriangle className="w-3 h-3" />
             Open in MiniPay
-          </div>
+          </button>
         ) : !isMiniPayEnv ? (
-          <a
-            href="https://link.minipay.xyz/discover"
-            target="_blank"
-            rel="noopener noreferrer"
+          <button
+            onClick={handleOpenMiniPay}
             className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg font-semibold text-white"
             style={{ backgroundColor: '#07955F' }}
           >
@@ -77,7 +79,7 @@ export function WalletConnect() {
               <path d="M21 3L3 10.5l6.75 2.25L12 21l2.25-6.75L21 3z"/>
             </svg>
             Open in MiniPay
-          </a>
+          </button>
         ) : (
           <div className="text-xs text-zinc-500 flex items-center gap-1.5">
             <Loader2 className="w-3 h-3 animate-spin" />

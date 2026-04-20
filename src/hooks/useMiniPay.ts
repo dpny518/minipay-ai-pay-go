@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useConnect, useConnectors, useAccount, useChainId, useSwitchChain, useBalance } from 'wagmi'
 import { CHAIN_IDS, CUSD_ADDRESSES } from '@/lib/contracts'
+import { openMiniPayDeepLink } from '@/lib/minipay-deeplink'
 
 const TARGET_CHAIN = (
   Number(process.env.NEXT_PUBLIC_CHAIN_ID || CHAIN_IDS.MAINNET)
@@ -49,6 +50,15 @@ export function useMiniPay() {
   const isWrongChain = isConnected && chainId !== TARGET_CHAIN
   const isConnecting = status === 'connecting' || status === 'reconnecting'
 
+  // Handle opening MiniPay deep link when not in MiniPay environment
+  const handleOpenMiniPay = () => {
+    if (!isMiniPayEnv) {
+      openMiniPayDeepLink()
+    } else {
+      connect({ connector: connectors[0] })
+    }
+  }
+
   return {
     address,
     isConnected,
@@ -62,5 +72,6 @@ export function useMiniPay() {
     connectError,
     refetchBalance,
     switchToTarget: () => switchChain({ chainId: TARGET_CHAIN }),
+    handleOpenMiniPay,
   }
 }

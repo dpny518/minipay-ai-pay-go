@@ -1,6 +1,6 @@
 # Implementation Plan
 
-- [ ] 1. Write bug condition exploration test
+- [x] 1. Write bug condition exploration test
   - **Property 1: Bug Condition** - Open MiniPay from Regular Browser
   - **CRITICAL**: This test MUST FAIL on unfixed code - failure confirms the bug exists
   - **DO NOT attempt to fix the test or the code when it fails**
@@ -16,7 +16,7 @@
   - Mark task complete when test is written, run, and failure is documented
   - _Requirements: 1.1, 1.2, 1.3_
 
-- [ ] 2. Write preservation tests (BEFORE implementing fix)
+- [x] 2. Write preservation tests (BEFORE implementing fix)
   - **Property 2: Preservation** - MiniPay Wallet Connection
   - **IMPORTANT**: Follow observation-first methodology
   - Observe behavior on UNFIXED code for MiniPay environment (`isMiniPayEnv = true`)
@@ -30,7 +30,7 @@
   - Mark task complete when tests are written, run, and passing on unfixed code
   - _Requirements: 3.1, 3.2, 3.3, 3.4_
 
-- [ ] 3. Fix for MiniPay deep link issue
+- [x] 3. Fix for MiniPay deep link issue
 
   - [ ] 3.1 Implement the fix in WalletConnect.tsx
     - Change button text logic from `{isMiniPayEnv ? 'Connect MiniPay' : 'Connect Wallet'}` to `{isMiniPayEnv ? 'Connect MiniPay' : 'Open in MiniPay'}`
