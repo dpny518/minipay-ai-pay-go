@@ -16,6 +16,10 @@ import { privateKeyToAccount } from 'viem/accounts'
 const USDC_BASE = '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913' as const
 const BASE_RPC  = 'https://mainnet.base.org'
 
+// Maximum USDC payment per single x402 request (0.50 USDC = 500000 in 6-decimal USDC)
+// Prevents a compromised API from draining the operator wallet
+const MAX_X402_PAYMENT_AMOUNT = 500_000n // $0.50 — well above any single task API cost
+
 // ─── EIP-3009 typed data ──────────────────────────────────────────────────────
 const TRANSFER_WITH_AUTH_TYPES = {
   TransferWithAuthorization: [
@@ -41,15 +45,9 @@ interface PaymentRequirements {
 }
 
 function randomNonce(): Hex {
+  // crypto.getRandomValues is available in Node.js 19+ and all modern runtimes
   const bytes = new Uint8Array(32)
-  if (typeof crypto !== 'undefined') {
-    crypto.getRandomValues(bytes)
-  } else {
-    // Node.js fallback
-    const { randomBytes } = require('crypto')
-    const rb = randomBytes(32)
-    rb.copy(Buffer.from(bytes.buffer))
-  }
+  crypto.getRandomValues(bytes)
   return ('0x' + Buffer.from(bytes).toString('hex')) as Hex
 }
 
@@ -144,6 +142,14 @@ export async function x402Fetch(
   )
   if (!payOpt) {
     throw new Error(`x402: no supported network in payment options: ${JSON.stringify(payReqs.accepts)}`)
+  }
+
+  // Guard: reject payments above the safety cap to prevent wallet draining
+  const requestedAmount = BigInt(payOpt.amount)
+  if (requestedAmount > MAX_X402_PAYMENT_AMOUNT) {
+    throw new Error(
+      `x402: requested payment ${payOpt.amount} exceeds safety cap ${MAX_X402_PAYMENT_AMOUNT}. Refusing to sign.`
+    )
   }
 
   // Sign and build the payment header

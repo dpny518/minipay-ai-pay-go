@@ -65,6 +65,16 @@ export const TASK_PRICE_DISPLAY: Record<TaskType, string> = {
   EMAIL_VERIFY:  '$0.060',
 }
 
+// Cost breakdown for transparency: what the API costs vs what user pays
+export const TASK_COST_BREAKDOWN: Record<TaskType, { apiCost: string; protocolFee: string; total: string }> = {
+  WEB_SEARCH:    { apiCost: '$0.010', protocolFee: '$0.015', total: '$0.025' },
+  WEB_SCRAPE:    { apiCost: '$0.013', protocolFee: '$0.017', total: '$0.030' },
+  AI_ANSWER:     { apiCost: '$0.010', protocolFee: '$0.015', total: '$0.025' },
+  PEOPLE_LOOKUP: { apiCost: '$0.070', protocolFee: '$0.030', total: '$0.100' },
+  SOCIAL_MEDIA:  { apiCost: '$0.060', protocolFee: '$0.060', total: '$0.120' },
+  EMAIL_VERIFY:  { apiCost: '$0.030', protocolFee: '$0.030', total: '$0.060' },
+}
+
 // ─── Networks ────────────────────────────────────────────────────────────────
 
 export const CHAIN_IDS = {

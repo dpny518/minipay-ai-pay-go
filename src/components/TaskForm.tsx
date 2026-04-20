@@ -9,6 +9,7 @@ import {
   TASK_PLACEHOLDERS,
   TASK_ICONS,
   TASK_PRICE_DISPLAY,
+  TASK_COST_BREAKDOWN,
 } from '@/lib/contracts'
 import { type TaskPhase } from '@/hooks/useTaskEscrow'
 
@@ -91,12 +92,20 @@ export function TaskForm({ isConnected, phase, onSubmit, onReset }: TaskFormProp
         </div>
       </div>
 
-      {/* Selected task info */}
-      <div className="flex items-center justify-between">
-        <p className="text-xs text-zinc-400">{TASK_DESCRIPTIONS[selectedType]}</p>
-        <span className="text-xs font-semibold text-[#35D07F]">
-          {TASK_PRICE_DISPLAY[selectedType]} cUSD
-        </span>
+      {/* Selected task info + cost breakdown */}
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <p className="text-xs text-zinc-400">{TASK_DESCRIPTIONS[selectedType]}</p>
+          <span className="text-xs font-semibold text-[#35D07F]">
+            {TASK_PRICE_DISPLAY[selectedType]} cUSD
+          </span>
+        </div>
+        <div className="flex items-center gap-3 text-[10px] text-zinc-600">
+          <span>API: {TASK_COST_BREAKDOWN[selectedType].apiCost}</span>
+          <span>+</span>
+          <span>Fee: {TASK_COST_BREAKDOWN[selectedType].protocolFee}</span>
+          <span className="text-zinc-700">+ gas</span>
+        </div>
       </div>
 
       {/* Input form */}

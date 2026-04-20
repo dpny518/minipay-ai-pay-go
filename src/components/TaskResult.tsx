@@ -11,6 +11,22 @@ interface Props {
   phase: string
 }
 
+/**
+ * Sanitize URLs to prevent javascript: protocol XSS.
+ * Only allows http: and https: schemes.
+ */
+function safeHref(url: string | undefined | null): string | undefined {
+  if (!url) return undefined
+  const trimmed = url.trim()
+  if (/^https?:\/\//i.test(trimmed)) return trimmed
+  // Relative URLs or other safe patterns
+  if (trimmed.startsWith('/') || trimmed.startsWith('#')) return trimmed
+  // Block javascript:, data:, vbscript:, etc.
+  if (/^[a-z][a-z0-9+.-]*:/i.test(trimmed)) return undefined
+  // Treat as bare domain — prepend https
+  return `https://${trimmed}`
+}
+
 function ExplorerLink({ hash, chainId }: { hash: string; chainId: number }) {
   const base =
     chainId === CHAIN_IDS.MAINNET
@@ -32,22 +48,31 @@ function WebSearchResult({ data }: { data: unknown }) {
   const results = (data as any)?.results || data as any[] || []
   return (
     <div className="space-y-3">
-      {results.slice(0, 6).map((r: any, i: number) => (
-        <div key={i} className="p-3 rounded-lg bg-zinc-900/60 border border-zinc-800">
-          <a
-            href={r.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-sm font-medium text-[#FCFF52] hover:underline line-clamp-1"
-          >
-            {r.title || r.url}
-          </a>
-          <p className="text-xs text-zinc-400 mt-1 line-clamp-2">
-            {r.text || r.snippet || r.summary || ''}
-          </p>
-          <p className="text-[10px] text-zinc-600 mt-1 truncate">{r.url}</p>
-        </div>
-      ))}
+      {results.slice(0, 6).map((r: any, i: number) => {
+        const href = safeHref(r.url)
+        return (
+          <div key={i} className="p-3 rounded-lg bg-zinc-900/60 border border-zinc-800">
+            {href ? (
+              <a
+                href={href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm font-medium text-[#FCFF52] hover:underline line-clamp-1"
+              >
+                {r.title || r.url}
+              </a>
+            ) : (
+              <span className="text-sm font-medium text-[#FCFF52] line-clamp-1">
+                {r.title || r.url}
+              </span>
+            )}
+            <p className="text-xs text-zinc-400 mt-1 line-clamp-2">
+              {r.text || r.snippet || r.summary || ''}
+            </p>
+            <p className="text-[10px] text-zinc-600 mt-1 truncate">{r.url}</p>
+          </div>
+        )
+      })}
     </div>
   )
 }
@@ -75,17 +100,24 @@ function AiAnswerResult({ data }: { data: unknown }) {
         <div>
           <p className="text-[10px] uppercase tracking-wider text-zinc-600 mb-2">Sources</p>
           <div className="space-y-1">
-            {citations.slice(0, 4).map((c: any, i: number) => (
-              <a
-                key={i}
-                href={c.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block text-xs text-[#35D07F] underline truncate"
-              >
-                {c.title || c.url}
-              </a>
-            ))}
+            {citations.slice(0, 4).map((c: any, i: number) => {
+              const href = safeHref(c.url)
+              return href ? (
+                <a
+                  key={i}
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block text-xs text-[#35D07F] underline truncate"
+                >
+                  {c.title || c.url}
+                </a>
+              ) : (
+                <span key={i} className="block text-xs text-zinc-400 truncate">
+                  {c.title || c.url}
+                </span>
+              )
+            })}
           </div>
         </div>
       )}
@@ -110,8 +142,8 @@ function PeopleLookupResult({ data }: { data: unknown }) {
         {company && <p className="text-xs text-zinc-400">{company}</p>}
         {email   && <p className="text-xs text-[#35D07F]">✉ {email}</p>}
         {phone   && <p className="text-xs text-zinc-300">📞 {phone}</p>}
-        {linkedin && (
-          <a href={linkedin} target="_blank" rel="noopener noreferrer"
+        {linkedin && safeHref(linkedin) && (
+          <a href={safeHref(linkedin)!} target="_blank" rel="noopener noreferrer"
              className="text-xs text-[#FCFF52] underline">
             LinkedIn →
           </a>

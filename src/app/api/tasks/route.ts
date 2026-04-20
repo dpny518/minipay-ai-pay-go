@@ -21,6 +21,49 @@ import { TASK_ESCROW_ABI, TASK_PRICES_CUSD, ESCROW_ADDRESSES, type TaskType } fr
 const OPERATOR_KEY     = process.env.OPERATOR_PRIVATE_KEY as Hex
 const CHAIN_ID_MAINNET = 42220
 
+// Safety check: warn if operator key looks like a dev/test key that was committed
+if (OPERATOR_KEY && typeof OPERATOR_KEY === 'string' && OPERATOR_KEY.length === 66) {
+  // Log at startup (not per-request) to remind about key security
+  console.warn(
+    '[tasks] SECURITY: Ensure OPERATOR_PRIVATE_KEY is loaded from a secure secret manager ' +
+    'in production, not from a file on disk.'
+  )
+}
+
+// ── Rate limiter (in-memory, per-user) ────────────────────────────────────────
+// Limits each user address to MAX_REQUESTS_PER_WINDOW within WINDOW_MS
+const RATE_LIMIT_WINDOW_MS  = 60_000   // 1 minute
+const RATE_LIMIT_MAX_REQUESTS = 5      // max 5 tasks per minute per user
+const rateLimitMap = new Map<string, { count: number; windowStart: number }>()
+
+function checkRateLimit(userAddress: string): boolean {
+  const key = userAddress.toLowerCase()
+  const now = Date.now()
+  const entry = rateLimitMap.get(key)
+
+  if (!entry || now - entry.windowStart > RATE_LIMIT_WINDOW_MS) {
+    rateLimitMap.set(key, { count: 1, windowStart: now })
+    return true
+  }
+
+  if (entry.count >= RATE_LIMIT_MAX_REQUESTS) {
+    return false
+  }
+
+  entry.count++
+  return true
+}
+
+// Periodically clean up stale entries to prevent memory leaks
+setInterval(() => {
+  const now = Date.now()
+  for (const [key, entry] of rateLimitMap) {
+    if (now - entry.windowStart > RATE_LIMIT_WINDOW_MS * 2) {
+      rateLimitMap.delete(key)
+    }
+  }
+}, RATE_LIMIT_WINDOW_MS * 2)
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyClient = any
 
@@ -138,6 +181,35 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ status: 'failed', error: 'Missing required fields' }, { status: 400 })
   }
 
+  // Validate hex format to prevent injection into contract calls
+  if (!/^0x[a-fA-F0-9]{64}$/.test(taskId)) {
+    return NextResponse.json({ status: 'failed', error: 'Invalid taskId format' }, { status: 400 })
+  }
+  if (!/^0x[a-fA-F0-9]{40}$/.test(userAddress)) {
+    return NextResponse.json({ status: 'failed', error: 'Invalid address format' }, { status: 400 })
+  }
+
+  // Validate taskType is a known enum value
+  const VALID_TASK_TYPES: TaskType[] = [
+    'WEB_SEARCH', 'WEB_SCRAPE', 'AI_ANSWER', 'PEOPLE_LOOKUP', 'SOCIAL_MEDIA', 'EMAIL_VERIFY'
+  ]
+  if (!VALID_TASK_TYPES.includes(taskType)) {
+    return NextResponse.json({ status: 'failed', error: `Invalid task type: ${taskType}` }, { status: 400 })
+  }
+
+  // Validate input length (prevent abuse)
+  if (input.length > 2000) {
+    return NextResponse.json({ status: 'failed', error: 'Input too long (max 2000 chars)' }, { status: 400 })
+  }
+
+  // Rate limit per user address
+  if (!checkRateLimit(userAddress)) {
+    return NextResponse.json(
+      { status: 'failed', error: 'Too many requests. Please wait a minute before trying again.' },
+      { status: 429 }
+    )
+  }
+
   const escrowAddress = ESCROW_ADDRESSES[chainId]
   if (!escrowAddress || escrowAddress === '0x') {
     return NextResponse.json(
@@ -178,8 +250,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ status: 'complete', result })
 
   } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err)
-    console.error('[tasks] task processing failed:', msg)
+    const rawMsg = err instanceof Error ? err.message : String(err)
+    console.error('[tasks] task processing failed:', rawMsg)
+
+    // Sanitize error: don't leak internal API URLs, status codes, or stack traces
+    const safeMsg = sanitizeErrorForClient(rawMsg)
 
     // Task failed — refund user
     await refundEscrow({
@@ -189,6 +264,40 @@ export async function POST(req: NextRequest) {
       taskId: taskId as `0x${string}`,
     })
 
-    return NextResponse.json({ status: 'failed', error: msg })
+    return NextResponse.json({ status: 'failed', error: safeMsg })
   }
+}
+
+/**
+ * Strip internal details from error messages before sending to the client.
+ * Keeps user-actionable messages (validation errors, "no person found", etc.)
+ * but strips API URLs, HTTP status codes, and raw server responses.
+ */
+function sanitizeErrorForClient(msg: string): string {
+  // Known user-facing error patterns — pass through
+  const userFacingPatterns = [
+    /^Insufficient cUSD/,
+    /^No person found/,
+    /^Unknown platform/,
+    /^Invalid URL/,
+    /^Only http/,
+    /^Scraping internal/,
+    /^Input too long/,
+    /timed out/i,
+  ]
+  for (const pat of userFacingPatterns) {
+    if (pat.test(msg)) return msg
+  }
+
+  // Strip internal API details (stableenrich, stablesocial, x402, etc.)
+  if (/stableenrich|stablesocial|x402|agentcash/i.test(msg)) {
+    return 'Task processing failed. Your deposit has been refunded.'
+  }
+
+  // Generic fallback — don't expose raw errors
+  if (msg.length > 120) {
+    return 'Task processing failed. Your deposit has been refunded.'
+  }
+
+  return msg
 }

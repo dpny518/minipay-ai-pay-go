@@ -100,10 +100,54 @@ async function handleWebSearch(input: string): Promise<TaskResult> {
   }
 }
 
-async function handleWebScrape(input: string): Promise<TaskResult> {
-  // Validate URL
-  let url = input.trim()
+/**
+ * Block SSRF: reject URLs targeting internal networks, cloud metadata,
+ * or non-http(s) schemes.
+ */
+function validateExternalUrl(raw: string): string {
+  let url = raw.trim()
   if (!url.startsWith('http')) url = 'https://' + url
+
+  let parsed: URL
+  try {
+    parsed = new URL(url)
+  } catch {
+    throw new Error('Invalid URL format')
+  }
+
+  // Only allow http(s)
+  if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
+    throw new Error('Only http/https URLs are allowed')
+  }
+
+  const hostname = parsed.hostname.toLowerCase()
+
+  // Block private/internal IP ranges and cloud metadata
+  const blockedPatterns = [
+    /^localhost$/,
+    /^127\./,
+    /^10\./,
+    /^172\.(1[6-9]|2\d|3[01])\./,
+    /^192\.168\./,
+    /^169\.254\./,          // AWS/cloud metadata endpoint
+    /^0\./,
+    /^\[::1?\]$/,           // IPv6 loopback
+    /^metadata\.google\./,  // GCP metadata
+    /\.internal$/,
+    /\.local$/,
+  ]
+
+  for (const pattern of blockedPatterns) {
+    if (pattern.test(hostname)) {
+      throw new Error('Scraping internal/private network addresses is not allowed')
+    }
+  }
+
+  return url
+}
+
+async function handleWebScrape(input: string): Promise<TaskResult> {
+  const url = validateExternalUrl(input)
 
   const data = await postStableEnrich('/api/firecrawl/scrape', {
     url,

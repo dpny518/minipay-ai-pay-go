@@ -2,12 +2,10 @@
 
 import { useState, useCallback } from 'react'
 import {
-  useReadContract,
   useWriteContract,
-  useWaitForTransactionReceipt,
   useChainId,
 } from 'wagmi'
-import { keccak256, encodePacked, toHex } from 'viem'
+import { keccak256, encodePacked } from 'viem'
 import {
   TASK_ESCROW_ABI,
   CUSD_ABI,
@@ -41,11 +39,14 @@ export interface HistoryEntry {
 }
 
 function generateTaskId(address: `0x${string}`, taskType: TaskType): `0x${string}` {
-  const nonce = Date.now()
+  // Use crypto-random nonce to prevent task ID collisions on rapid submissions
+  const randomBytes = new Uint8Array(32)
+  crypto.getRandomValues(randomBytes)
+  const nonce = ('0x' + Array.from(randomBytes, b => b.toString(16).padStart(2, '0')).join('')) as `0x${string}`
   return keccak256(
     encodePacked(
-      ['address', 'string', 'uint256'],
-      [address, taskType, BigInt(nonce)]
+      ['address', 'string', 'bytes32'],
+      [address, taskType, nonce]
     )
   )
 }
@@ -85,9 +86,7 @@ export function useTaskEscrow(userAddress?: `0x${string}`) {
   const { writeContractAsync: writeApprove } = useWriteContract()
   const { writeContractAsync: writeDeposit } = useWriteContract()
 
-  // Wait for tx receipts (we track manually via txHash state)
-  const { isSuccess: approvalSuccess, isError: approvalError } =
-    useWaitForTransactionReceipt({ hash: txHash as `0x${string}` | undefined })
+  // (tx receipt tracking is handled inline via publicClient.waitForTransactionReceipt)
 
   const reset = useCallback(() => {
     setPhase('idle')
@@ -117,11 +116,9 @@ export function useTaskEscrow(userAddress?: `0x${string}`) {
       setTaskId(newTaskId)
 
       try {
-        // ── Phase 1: Check allowance ──────────────────────────────────────────
+        // ── Phase 1: Check balance & allowance ────────────────────────────────
         setPhase('checking_allowance')
 
-        // We use a direct RPC call to check allowance
-        // (avoid hook limitations in callbacks by using wagmi's readContract action)
         const { createPublicClient, http } = await import('viem')
         const { celo, celoAlfajores } = await import('viem/chains')
         const chain = chainId === 42220 ? celo : celoAlfajores
@@ -134,6 +131,21 @@ export function useTaskEscrow(userAddress?: `0x${string}`) {
           ),
         })
 
+        // Check balance before proceeding
+        const balance = await publicClient.readContract({
+          address: cusdAddress,
+          abi:     CUSD_ABI,
+          functionName: 'balanceOf',
+          args:    [userAddress],
+        })
+        if (balance < price) {
+          const needed = (Number(price) / 1e18).toFixed(3)
+          const have = (Number(balance) / 1e18).toFixed(3)
+          throw new Error(
+            `Insufficient cUSD balance. Need ${needed} cUSD but you have ${have} cUSD.`
+          )
+        }
+
         const allowance = await publicClient.readContract({
           address: cusdAddress,
           abi:     CUSD_ABI,
@@ -144,11 +156,13 @@ export function useTaskEscrow(userAddress?: `0x${string}`) {
         // ── Phase 2: Approve if needed ────────────────────────────────────────
         if (allowance < price) {
           setPhase('approving')
+          // Approve 10x the price to batch future tasks and save gas
+          const approveAmount = price * 10n
           const approveTx = await writeApprove({
             address:      cusdAddress,
             abi:          CUSD_ABI,
             functionName: 'approve',
-            args:         [escrowAddress, price],
+            args:         [escrowAddress, approveAmount],
           })
           setTxHash(approveTx)
           setPhase('awaiting_approval')
