@@ -1,5 +1,6 @@
 'use client'
 
+import { Loader2, AlertTriangle, Zap } from 'lucide-react'
 import { useMiniPay } from '@/hooks/useMiniPay'
 import { CHAIN_IDS } from '@/lib/contracts'
 
@@ -10,11 +11,9 @@ export function WalletConnect() {
     isConnecting,
     isMiniPayEnv,
     isWrongChain,
-    chainId,
     targetChainId,
     cusdBalance,
-    connect,
-    disconnect,
+    connectError,
     switchToTarget,
   } = useMiniPay()
 
@@ -24,29 +23,27 @@ export function WalletConnect() {
     <div className="flex items-center justify-between px-4 py-3 bg-zinc-900 border-b border-zinc-800">
       {/* Brand */}
       <div className="flex items-center gap-2">
-        <div className="w-7 h-7 rounded-full bg-[#FCFF52] flex items-center justify-center text-black text-xs font-black">
-          AI
+        <div className="w-7 h-7 rounded-lg bg-[#FCFF52] flex items-center justify-center">
+          <Zap className="w-4 h-4 text-black" strokeWidth={2.5} />
         </div>
         <span className="text-sm font-semibold text-white">MiniPay AI</span>
-        <span className="text-[10px] px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-400">
+        <span className="text-[10px] px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-400 font-mono">
           {networkName}
         </span>
       </div>
 
-      {/* Wallet state */}
+      {/* Wallet state — no connect button, auto-connects */}
       <div className="flex items-center gap-2">
         {isWrongChain ? (
           <button
             onClick={switchToTarget}
-            className="text-xs px-3 py-1.5 rounded-lg bg-orange-500/20 text-orange-400 border border-orange-500/30 active:opacity-70"
+            className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-orange-500/10 text-orange-400 border border-orange-500/30 active:opacity-70"
           >
+            <AlertTriangle className="w-3 h-3" />
             Switch to {networkName}
           </button>
         ) : isConnected && address ? (
-          <button
-            onClick={() => disconnect()}
-            className="flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg bg-zinc-800 text-zinc-300 active:bg-zinc-700"
-          >
+          <div className="flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg bg-zinc-800 text-zinc-300">
             <div className="w-1.5 h-1.5 rounded-full bg-[#35D07F]" />
             <span className="font-mono">
               {address.slice(0, 6)}…{address.slice(-4)}
@@ -56,19 +53,36 @@ export function WalletConnect() {
                 ${parseFloat(cusdBalance.formatted).toFixed(2)}
               </span>
             )}
-          </button>
+          </div>
         ) : isConnecting ? (
           <div className="text-xs text-zinc-500 flex items-center gap-1.5">
-            <div className="w-3 h-3 border border-zinc-500 border-t-white rounded-full animate-spin" />
-            Connecting…
+            <Loader2 className="w-3 h-3 animate-spin" />
+            Connecting
           </div>
-        ) : (
-          <button
-            onClick={connect}
-            className="text-xs px-3 py-1.5 rounded-lg bg-[#FCFF52] text-black font-semibold active:opacity-80"
+        ) : connectError ? (
+          <div className="text-xs text-red-400 flex items-center gap-1.5">
+            <AlertTriangle className="w-3 h-3" />
+            Open in MiniPay
+          </div>
+        ) : !isMiniPayEnv ? (
+          <a
+            href="https://link.minipay.xyz/discover"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg font-semibold text-white"
+            style={{ backgroundColor: '#07955F' }}
           >
-            {isMiniPayEnv ? 'Connect MiniPay' : 'Connect Wallet'}
-          </button>
+            {/* MiniPay airplane icon */}
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M21 3L3 10.5l6.75 2.25L12 21l2.25-6.75L21 3z"/>
+            </svg>
+            Open in MiniPay
+          </a>
+        ) : (
+          <div className="text-xs text-zinc-500 flex items-center gap-1.5">
+            <Loader2 className="w-3 h-3 animate-spin" />
+            Connecting
+          </div>
         )}
       </div>
     </div>

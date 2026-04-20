@@ -36,12 +36,12 @@ export const TASK_PLACEHOLDERS: Record<TaskType, string> = {
 }
 
 export const TASK_ICONS: Record<TaskType, string> = {
-  WEB_SEARCH:    '🔍',
-  WEB_SCRAPE:    '🌐',
-  AI_ANSWER:     '🤖',
-  PEOPLE_LOOKUP: '👤',
-  SOCIAL_MEDIA:  '📱',
-  EMAIL_VERIFY:  '✉️',
+  WEB_SEARCH:    'search',
+  WEB_SCRAPE:    'globe',
+  AI_ANSWER:     'bot',
+  PEOPLE_LOOKUP: 'user',
+  SOCIAL_MEDIA:  'smartphone',
+  EMAIL_VERIFY:  'mail',
 }
 
 // ─── Pricing (in cUSD, 18 decimals) ──────────────────────────────────────────
