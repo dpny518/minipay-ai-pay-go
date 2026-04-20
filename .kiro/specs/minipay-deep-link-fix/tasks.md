@@ -32,7 +32,7 @@
 
 - [x] 3. Fix for MiniPay deep link issue
 
-  - [ ] 3.1 Implement the fix in WalletConnect.tsx
+  - [x] 3.1 Implement the fix in WalletConnect.tsx
     - Change button text logic from `{isMiniPayEnv ? 'Connect MiniPay' : 'Connect Wallet'}` to `{isMiniPayEnv ? 'Connect MiniPay' : 'Open in MiniPay'}`
     - Modify onClick handler to conditionally trigger deep link when `!isMiniPayEnv`
     - Add `openMiniPayDeepLink()` function that constructs and triggers MiniPay deep link URL
@@ -43,7 +43,7 @@
     - _Preservation: Preservation Requirements from design - when isMiniPayEnv = true, preserve all wallet connection behavior_
     - _Requirements: 2.1, 2.2, 2.3, 3.1, 3.2, 3.3, 3.4_
 
-  - [ ] 3.2 Implement the fix in useMiniPay.ts hook
+  - [x] 3.2 Implement the fix in useMiniPay.ts hook
     - Add `openMiniPayDeepLink()` function that returns URL construction logic
     - Enhance environment detection to differentiate between "can connect" vs "needs deep link" states
     - Add utility functions for URL encoding and platform detection
@@ -52,7 +52,7 @@
     - _Preservation: Preservation Requirements from design_
     - _Requirements: 2.1, 2.2, 2.3, 3.1, 3.2, 3.3, 3.4_
 
-  - [ ] 3.3 Create new minipay-deeplink.ts utility file
+  - [x] 3.3 Create new minipay-deeplink.ts utility file
     - Create `src/lib/minipay-deeplink.ts` file
     - Implement URL construction for MiniPay deep links with current page URL
     - Implement fallback for when deep link fails (open app store, show instructions)
@@ -63,7 +63,7 @@
     - _Preservation: Preservation Requirements from design_
     - _Requirements: 2.1, 2.2, 2.3, 3.1, 3.2, 3.3, 3.4_
 
-  - [ ] 3.4 Verify bug condition exploration test now passes
+  - [x] 3.4 Verify bug condition exploration test now passes
     - **Property 1: Expected Behavior** - Open MiniPay from Regular Browser
     - **IMPORTANT**: Re-run the SAME test from task 1 - do NOT write a new test
     - The test from task 1 encodes the expected behavior
@@ -72,7 +72,7 @@
     - **EXPECTED OUTCOME**: Test PASSES (confirms bug is fixed)
     - _Requirements: Expected Behavior Properties from design_
 
-  - [ ] 3.5 Verify preservation tests still pass
+  - [x] 3.5 Verify preservation tests still pass
     - **Property 2: Preservation** - MiniPay Wallet Connection
     - **IMPORTANT**: Re-run the SAME tests from task 2 - do NOT write new tests
     - Run preservation property tests from step 2
@@ -80,7 +80,7 @@
     - Confirm all tests still pass after fix (no regressions)
     - _Requirements: Preservation Requirements from design_
 
-- [ ] 4. Checkpoint - Ensure all tests pass
+- [-] 4. Checkpoint - Ensure all tests pass
   - Run comprehensive test suite including:
     - Bug condition exploration test (should pass)
     - Preservation tests (should pass)
